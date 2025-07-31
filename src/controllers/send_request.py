@@ -751,7 +751,7 @@ class SendRequest:
                         "reg_iva_vta":record.get('reg_iva_vta'),
                         # "vta_fac": parent_ref.get('parent_id'),
                         "clt":record.get('clt'),
-                        "mov_tip":record.get('mov_tip'),
+                        "mov_tip":"C",
                         "cal_arr":1,
                         "desc":record.get('desc_adi')
                     }
