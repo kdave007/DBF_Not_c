@@ -220,7 +220,7 @@ class DetailTracking:
                                 
                                 # Extract values
                                 detail_hash = detail.get('hash_detail') or detail.get('hash_detalle') or detail.get('detail_hash')
-                                estado = 'pa_completado'
+                                estado = 'dv_completado'
                                 operation = detail.get('accion', 'creado')
                                 
                                 params = (

@@ -260,7 +260,7 @@ class SendRequest:
                                 partida_data = {
                                     'id': partida.get('id'),
                                     'indice': indice,
-                                    'folio': folio,
+                                    'folio': folio_str,
                                 }
                                 
                                 # Add additional fields from matching detail if found
@@ -342,7 +342,7 @@ class SendRequest:
                     logging.info(f"Error processing response for folio   {folio}: {(e)}")
                     # Add to failed results
                     results['failed'].append({
-                        'folio': folio,
+                        'folio': folio_str,
                         'fecha_emision': dbf_record.get('fecha'),
                         'total_partidas': len(dbf_record.get('detalles', [])),
                         'hash': record.get('dbf_hash', ''),
@@ -352,11 +352,11 @@ class SendRequest:
             else:
                 # Failed request
                 error_message = f"Request failed with status {response.status_code}: {response.text}"
-                print(f"Error for folio {folio}: {error_message}")
+                print(f"Error for folio {folio_str}: {error_message}")
                 logging.info(f"Request failed with status {response.status_code}: {response.text}")
                 
                 results['failed'].append({
-                    'folio': folio,
+                    'folio': folio_str,
                     'fecha_emision': dbf_record.get('fecha'),
                     'total_partidas': len(dbf_record.get('detalles', [])),
                     'hash': record.get('dbf_hash', ''),

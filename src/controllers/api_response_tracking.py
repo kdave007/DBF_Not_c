@@ -52,7 +52,7 @@ class APIResponseTracking:
 
     def _create_op(self, item):
         action = 'agregado'
-        estado = 'ca_completado'
+        estado = 'dv_completado'
           
         # Parse the date string from DBF format to a proper date object
         print(f'item to insert {item}')
