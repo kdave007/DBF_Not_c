@@ -156,8 +156,8 @@ class DBFSQLComparator:
             return {"matched": False, "error": "SQL record missing hash_lote field"}
         
         is_match = dbf_hash == sql_hash
-        # print(f"DBF Hash: {dbf_hash}")
-        # print(f"SQL Hash: {sql_hash}")
+        print(f"DBF Hash: {dbf_hash}")
+        print(f"SQL Hash: {sql_hash}")
         
         # Perform record-by-record comparison directly instead of just checking batch hashes
         # This ensures we always get the same structure as compare_records_by_hash
@@ -208,6 +208,9 @@ class DBFSQLComparator:
         in_sql_only = []  # Records to delete
         matching = []    # Records that don't need any changes (hash matches)
         
+        print("COMPARING RECORDS BY HASH")
+        print(f" dbf {dbf_records['data']}")
+        print(f" sql {sql_records}")
         # Check each DBF record
         for folio, dbf_record in dbf_records_by_folio.items():
             if folio in sql_records_by_folio:

@@ -229,7 +229,8 @@ class SendRequest:
                     if 'CA' in response_json and response_json['CA']:
                         ca_data = response_json['CA']
                         id_value = ca_data.get('id')
-                        folio_str = str(ca_data.get('folio'))
+                        # folio_str = str(ca_data.get('folio'))
+                        folio_str = folio
                         logging.info(f"Response fac id {id_value}")
                         
                         # Create success entry
