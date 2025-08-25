@@ -50,11 +50,12 @@ class VelneoMappings:
                 # Return connection to pool instead of closing
                 self.pool.release_connection(conn)
 
-    def get_from_general_alm(self):
+    def get_from_general_alm(self, store, plaza):
         """Get the Velneo ID for an almacen (warehouse) from general_misc table
         
         Args:
-            reference: The reference to look for (id_psi)
+            store: The reference to look for (tienda)
+            plaza: The reference to look for (plaza)
             
         Returns:
             int: The Velneo ID (id_velneo) if found, None otherwise
@@ -71,11 +72,11 @@ class VelneoMappings:
             cursor = conn.cursor()
             
             query = """
-            SELECT id_velneo FROM general_misc 
-            WHERE title = 'almacen'
+            SELECT velneo FROM public.almacen
+            WHERE tienda = %s and plaza = %s LIMIT 1; 
             """
             
-            cursor.execute(query)
+            cursor.execute(query, (store, plaza))
             result = cursor.fetchone()
             
             return result[0] if result else None
