@@ -200,21 +200,21 @@ class DataMap:
             logging.error(f"Error mapping articulo with ref {ref}: {e}")
             return None
 
-    def apply_map_plaza(self) -> Optional[int]:
-        """Get the Velneo ID for empresa from the database
+    # def apply_map_plaza(self) -> Optional[int]:
+    #     """Get the Velneo ID for empresa from the database
         
-        Args:
-            ref: The reference code from the DBF record (not used in current implementation)
+    #     Args:
+    #         ref: The reference code from the DBF record (not used in current implementation)
             
-        Returns:
-            int: The mapped Velneo ID or None if not found
-        """
-        try:
-            # Note: ref parameter is kept for consistency but not used in the current implementation
-            return self.velneo_mappings.get_from_general_plaza()
-        except Exception as e:
-            logging.error(f"Error mapping empresa: {e}")
-            return None
+    #     Returns:
+    #         int: The mapped Velneo ID or None if not found
+    #     """
+    #     try:
+    #         # Note: ref parameter is kept for consistency but not used in the current implementation
+    #         return self.velneo_mappings.get_from_general_plaza()
+    #     except Exception as e:
+    #         logging.error(f"Error mapping empresa: {e}")
+    #         return None
     
     def apply_map_caja_banco(self, ref: str) -> Optional[int]:
         """Get the Velneo ID for caja_banco from the database
@@ -378,7 +378,7 @@ class DataMap:
         
         result['caja_bco'] = self.apply_map_caja_banco(record['caja_bco'])
 
-        result['plaza'] = self.apply_map_plaza()
+        result['plaza'] = plaza
 
         result['fpg'] = self.apply_map_forma_pago_caja_banco(record['caja_bco'])
 
