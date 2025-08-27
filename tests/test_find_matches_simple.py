@@ -42,17 +42,19 @@ def main():
     # start_date = date(2025, 5, 5)  # year month day
     # end_date = date(2025, 5, 5)  # year month day
 
-    # Check if script should be stopped based on .env flag
-    load_dotenv()  # Load environment variables
-    stop_script = os.getenv('STOP_SCRIPT', 'False').lower() == 'true'
-    logging.info(f" STOP_SCRIPT : {os.getenv('STOP_SCRIPT', 'False')} ")
-    logging.info(f" DEBUG_MODE : {os.getenv('DEBUG_MODE', 'False')} ")
-    logging.info(f" SQL_ENABLED : {os.getenv('SQL_ENABLED', 'False')} ")
+    # Check if script should be stopped based on encrypted .env flag
+    from src.utils.get_enc import EncEnv
+    env = EncEnv()
+    
+    stop_script = env.get('STOP_SCRIPT', 'False') == 'True'
+    logging.info(f" STOP_SCRIPT : {env.get('STOP_SCRIPT', 'False')} ")
+    logging.info(f" DEBUG_MODE : {env.get('DEBUG_MODE', 'False')} ")
+    logging.info(f" SQL_ENABLED : {env.get('SQL_ENABLED', 'False')} ")
    
     #internet validation
 
     # Check internet connection if required by environment variable
-    internet_check = os.getenv('INTERNET_CHECK', 'True').lower() == 'true'
+    internet_check = env.get('INTERNET_CHECK', 'True').lower() == 'true'
     if internet_check:
         from src.utils.network_utils import check_internet_connection
         internet_available, error_message = check_internet_connection()

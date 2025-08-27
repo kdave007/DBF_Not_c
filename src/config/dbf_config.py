@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from src.utils.get_enc import EncEnv
 
 @dataclass
 class DBFConfig:
@@ -15,10 +16,11 @@ class DBFConfig:
         # Load from .env if values not provided
         limit_rows=None
         load_dotenv()
+        env = EncEnv()
         
-        self.dll_path = dll_path or os.getenv('DBF_DLL_PATH')
-        self.encryption_password = encryption_password or os.getenv('DBF_ENCRYPTION_PASSWORD')
-        self.source_directory = source_directory or os.getenv('DBF_SOURCE_DIR')
+        self.dll_path = dll_path or env.get('DBF_DLL_PATH')
+        self.encryption_password = encryption_password or env.get('DBF_ENCRYPTION_PASSWORD')
+        self.source_directory = source_directory or env.get('DBF_SOURCE_DIR')
         self.limit_rows = limit_rows
         
         # Validate required fields

@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+from src.utils.get_enc import EncEnv
 
 def setup_logging(log_level=logging.INFO):
     """
@@ -12,10 +13,11 @@ def setup_logging(log_level=logging.INFO):
     # Load environment variables if not already loaded
     from dotenv import load_dotenv
     load_dotenv()
+    env = EncEnv()
     
     # Get log directory from environment variable or use default
     default_logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
-    logs_dir = os.getenv('LOG_PATH', default_logs_dir)
+    logs_dir = env.get('LOG_PATH', default_logs_dir)
     
     # Create logs directory if it doesn't exist
     os.makedirs(logs_dir, exist_ok=True)

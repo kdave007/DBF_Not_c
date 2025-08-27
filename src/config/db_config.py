@@ -5,6 +5,7 @@ from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+from src.utils.get_enc import EncEnv
 
 class PostgresConnection:
     _connection_pool = None
@@ -35,15 +36,18 @@ class PostgresConnection:
         # Load environment variables
         env_path = Path(__file__).parent.parent.parent / '.env'
         load_dotenv(env_path)
+        
+        env = EncEnv()
 
         # Get database configuration from environment variables
         self.db_config = {
-            'dbname': os.getenv('PG_DATABASE'),
-            'user': os.getenv('PG_USER'),
-            'password': os.getenv('PG_PASSWORD'),
-            'host': os.getenv('PG_HOST'),
-            'port': os.getenv('PG_PORT', '5432')
+            'dbname': env.get('PG_DATABASE'),
+            'user': env.get('PG_USER'),
+            'password': env.get('PG_PASSWORD'),
+            'host': env.get('PG_HOST'),
+            'port': env.get('PG_PORT', '5432')
         }
+       
 
         # Validate configuration
         missing_vars = [key for key, value in self.db_config.items() if value is None]
@@ -57,14 +61,38 @@ class PostgresConnection:
     def _initialize_connection_pool(self, minconn: int = 1, maxconn: int = 10) -> None:
         """Initialize the connection pool with min and max connections"""
         try:
+            print("Connecting to database...")
             PostgresConnection._connection_pool = pool.SimpleConnectionPool(
                 minconn,
                 maxconn,
                 **self.db_config,
                 cursor_factory=RealDictCursor
             )
+        except psycopg2.OperationalError as e:
+            # Handle authentication errors, connection refused, etc.
+            error_msg = str(e).strip()
+            print("DB CONNECTION ERROR: Failed to connect to database")
+            
+            if "password authentication failed" in error_msg.lower():
+                print("Authentication failed - check credentials in .env.enc")
+            elif "connection refused" in error_msg.lower():
+                print("Connection refused - check if database server is running")
+            elif "does not exist" in error_msg.lower():
+                print(f"Database '{self.db_config['dbname']}' not found")
+            
+            raise Exception(f'DB CONNECTION error: {error_msg}')
+            
         except psycopg2.Error as e:
-            raise Exception(f'Error initializing PostgreSQL connection pool: {e}')
+            # Handle other PostgreSQL errors
+            error_msg = str(e).strip()
+            print(f"DB ERROR: {error_msg}")
+            raise Exception(f'PostgreSQL error: {error_msg}')
+            
+        except Exception as e:
+            # Handle any other unexpected errors
+            error_msg = str(e).strip()
+            print(f"UNEXPECTED DB ERROR: {error_msg}")
+            raise Exception(f'DB error: {error_msg}')
 
     def get_connection(self) -> Any:
         """Get a connection from the pool"""
@@ -97,7 +125,8 @@ class PostgresConnection:
         except psycopg2.Error as e:
             if connection:
                 connection.rollback()
-            raise Exception(f'Database error: {e}')
+            print(f"DB QUERY ERROR: {str(e)}")
+            raise Exception(f'DB query error: {e}')
 
         finally:
             if cursor:
@@ -145,7 +174,8 @@ class PostgresConnection:
             if own_connection and connection:
                 connection.rollback()
                 self.return_connection(connection)
-            raise Exception(f'Database error in batch operation: {e}')
+            print(f"DB BATCH ERROR: {str(e)}")
+            raise Exception(f'DB batch error: {e}')
 
         finally:
             if cursor:

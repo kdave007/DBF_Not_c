@@ -2,6 +2,7 @@ import clr
 import os
 from pathlib import Path
 from typing import Optional
+from src.utils.get_enc import EncEnv
 
 class DBFConnection:
     _dll_loaded = False
@@ -37,8 +38,9 @@ class DBFConnection:
         """
         self.data_source = str(Path(data_source).resolve())
         
+        env = EncEnv()
         # Check if encryption is enabled via environment variable
-        encrypted = os.getenv('ENCRYPTED', 'True').lower() == 'true'
+        encrypted = env.get('ENCRYPTED', 'True').lower() == 'true'
         
         # Build connection string with or without encryption password based on ENCRYPTED flag
         connection_parts = [

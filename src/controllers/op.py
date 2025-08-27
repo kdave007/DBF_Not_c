@@ -10,6 +10,7 @@ import os
 import sys
 import logging
 from dotenv import load_dotenv
+from src.utils.get_enc import EncEnv
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +24,7 @@ class OP:
         self.db_config = PostgresConnection.get_db_config()
         self.retries_track = RetriesTracking(self.db_config)
         self.error = ErrorTracking(self.db_config)
+        self.env = EncEnv()
 
         self.bypass_ca = False
 
@@ -42,14 +44,14 @@ class OP:
 
     def _create(self, records):
         # Read API configuration from .env file
-        base_url = os.getenv('API_BASE_URL', 'https://c8.velneo.com:17262/api/vLatamERP_db_dat/v2/_process/pro_vta_fac')
-        api_key = os.getenv('API_KEY', '123456')
+        base_url = self.env.get('API_BASE_URL')
+        api_key = self.env.get('API_KEY')
 
         total_successfull_op = 0
         total_failed_op = 0
         
         # Check if SQL operations are enabled
-        sql_enabled = os.getenv('SQL_ENABLED', 'True').lower() == 'true'
+        sql_enabled = self.env.get('SQL_ENABLED', 'True').lower() == 'true'
         for record in records:
             print(f'RECORD FOUND {record}')
             print(f'------')

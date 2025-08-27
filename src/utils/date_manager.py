@@ -1,8 +1,11 @@
 from datetime import date, datetime, timedelta
 from calendar import monthrange
 import os
+from src.utils.get_enc import EncEnv
 
 class DateManager:
+    def __init__(self):
+        self.env = EncEnv()
 
     def get_dates(self):
         """
@@ -17,12 +20,12 @@ class DateManager:
             tuple: (start_date, end_date) as date objects in format date(year, month, day)
         """
         # Check if specific dates are set in environment variables
-        specific_date = os.getenv('SPECIFIC_DATE', 'False').lower() == 'true'
+        specific_date = self.env.get('SPECIFIC_DATE', 'False').lower() == 'true'
         
         if specific_date:
             # Parse dates from environment variables in format DD/MMYYYY
-            start_str = os.getenv('START')
-            end_str = os.getenv('END')
+            start_str = self.env.get('START')
+            end_str = self.env.get('END')
             
             if start_str and end_str:
                 try:
