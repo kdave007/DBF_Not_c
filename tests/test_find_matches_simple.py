@@ -17,7 +17,7 @@ log_file = setup_logging()
 # Use logging instead of print for the decorative message
 border = "*" * 80
 spacing = "*" + " " * 78 + "*"
-message = "*" + " " * 25 + "STARTING SCRIPT EXECUTION v 1.2" + " " * 25 + "*"
+message = "*" + " " * 25 + "STARTING SCRIPT EXECUTION v 1.3" + " " * 25 + "*"
 
 logging.info(border)
 logging.info(spacing)
@@ -50,6 +50,14 @@ def main():
     logging.info(f" STOP_SCRIPT : {env.get('STOP_SCRIPT', 'False')} ")
     logging.info(f" DEBUG_MODE : {env.get('DEBUG_MODE', 'False')} ")
     logging.info(f" SQL_ENABLED : {env.get('SQL_ENABLED', 'False')} ")
+
+    store = env.get("CLAVE_SUCURSAL")
+    if not store:
+        logging.error("CLAVE_SUCURSAL environment variable is not set. Stopping script.")
+        print("ERROR: CLAVE_SUCURSAL environment variable is not set. Stopping script.")
+        sys.exit(1)
+
+    logging.info(f"CLAVE_SUCURSAL : {store}.")
    
     #internet validation
 
