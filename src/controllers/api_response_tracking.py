@@ -17,42 +17,9 @@ class APIResponseTracking:
         self.resp_detail_tracking = DetailTracking(self.db_config)
         self.resp_receipt_tracking = ReceiptTracking(self.db_config)
 
-    # def update_tracker(self, responses_status):
-
-    #     status_create = self._create_op(responses_status['create'])
-    #     print(f'status_create: {status_create}')
-    #     status_update = self._update_op(responses_status['update'])
-    #     print(f'status_update: {status_update}')
-    #     status_delete = self._delete_op(responses_status['delete'])
-    #     print(f'status_delete: {status_delete}')
-
-    #     next_step = False
-        
-    #     if status_create['execute']:
-    #         if status_create['done']:
-    #             next_step = True
-    #         else:
-    #             return False
-
-    #     if status_update['execute']:
-    #         if status_update['done']:
-    #             next_step = True
-    #         else:
-    #             return False
-
-    #     if status_delete['execute']:
-    #         if status_delete['done']:
-    #             next_step = True
-    #         else:
-    #             return False
-    #     print(f'CHECK ')
-    #     return next_step
-
-
-
     def _create_op(self, item):
-        action = 'agregado'
-        estado = 'dv_completado'
+        action = item.get('accion')
+        estado = item.get('estado')
           
         # Parse the date string from DBF format to a proper date object
         print(f'item to insert {item}')
@@ -68,23 +35,41 @@ class APIResponseTracking:
             fecha_date = datetime.now().date()
             print(f"Warning: Could not parse date '{fecha_str}', using current date instead")
         
-        return self.resp_tracking.update_status(
+        return self.resp_tracking.insert_fac(
             item.get('id'),
             item.get('folio'),
             item.get('total_partidas'),
             item.get('hash'),
             estado,
             action,
-            fecha_date
+            fecha_date,
+            item.get('total_recibos')
         )
    
-    def _details_completed(self, records):
+    def _details_waiting(self, records):
         """
         Process completed details (partidas) from API response
         """
+
         details = records.get('partidas')
+        action = records.get('accion')
+        estado = records.get('estado')
+
         if details:
-            return self.resp_detail_tracking.batch_replace_by_id(details)
+            return self.resp_detail_tracking.insert_details_on_wait(details, action, estado)
+        return False
+
+    def _receipts_waiting(self, records):
+        """
+        Process completed details (partidas) from API response
+        """
+
+        receipts = records.get('recibos')
+        action = records.get('accion')
+        estado = records.get('estado')
+
+        if receipts:
+            return self.resp_receipt_tracking.insert_receipts_on_wait(receipts, action, estado)
         return False
 
     
@@ -94,7 +79,7 @@ class APIResponseTracking:
         """
         receipts = records.get('recibos')
         if receipts:
-            return self.resp_receipt_tracking.batch_replace_by_id(receipts)
+            return self.resp_receipt_tracking(receipts)
         return False
             
 
@@ -127,7 +112,7 @@ class APIResponseTracking:
                     fecha_date = datetime.now().date()
                     print(f"Warning: Could not parse date '{fecha_str}', using current date instead")
                 
-                done = self.resp_tracking.update_status(
+                done = self.resp_tracking.insert_fac(
                     item.get('id'),
                     item.get('folio'),
                     item.get('total_partidas'),
@@ -167,7 +152,7 @@ class APIResponseTracking:
                     item.get('id')
                 )
                 
-    def _pa_completed(self, id):
+    def _head_completed(self, record):
         """Update record status to indicate that all details have been processed
         
         Args:
@@ -176,12 +161,44 @@ class APIResponseTracking:
         Returns:
             bool: True if the update was successful, False otherwise
         """
-        action = 'procesado'
-        estado = 'pa_completado'
+
+        estado = record.get('estado')
+        action = record.get('accion')
+        folio = record.get('folio')
+        new_id = record.get('id')
         
         print(f"Updating record {id} to status: {estado}, action: {action}")
         
-        return self.resp_tracking.update_record_status(id, estado, action)
+        return self.resp_tracking.update_head_status(folio, new_id, estado, action)
+
+    def _detail_completed(self, records):
+        """Update record status to indicate that all details have been processed
+        
+        Args:
+            id: The ID of the record to update
+            
+        Returns:
+            bool: True if the update was successful, False otherwise
+        """
+  
+        details = records.get('partidas')    
+        
+        return self.resp_tracking.update_detail_status(details)
+
+    def _receipt_completed(self, records):
+        """Update record status to indicate that all details have been processed
+        
+        Args:
+            id: The ID of the record to update
+            
+        Returns:
+            bool: True if the update was successful, False otherwise
+        """
+        
+        receipts = records.get('recibos')   
+        
+        return self.resp_tracking.update_receipt_status(receipts)
+
 
     def update_create_details(self, records):
         """

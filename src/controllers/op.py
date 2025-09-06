@@ -8,9 +8,12 @@ from src.db.error_tracking import ErrorTracking
 from datetime import datetime, date
 import os
 import sys
+import time
 import logging
 from dotenv import load_dotenv
 from src.utils.get_enc import EncEnv
+from src.controllers.pending_records_controller import PendingRecordsController
+from src.controllers.get_pendings_req import GetPendingReq
 
 # Load environment variables
 load_dotenv()
@@ -25,12 +28,25 @@ class OP:
         self.retries_track = RetriesTracking(self.db_config)
         self.error = ErrorTracking(self.db_config)
         self.env = EncEnv()
+        self.pending_records = PendingRecordsController(self.db_config)
+        self.get_pending = GetPendingReq()
+        self.sql_enabled = self.env.get('SQL_ENABLED', 'True').lower() == 'true'
 
         self.bypass_ca = False
 
         if "create" in operations:
-            ops = self._create(operations['create'])
+            create_results = self._create(operations['create'])
             logging.info(f"request to upload data finished")
+            #wait here till the server process the documents...
+            sys.exit()
+            time.sleep(2)
+            logging.info(f"START ::  GET request for documents uploaded to the server...")
+            update_results = self.update_pending()
+
+            logging.info(f"RESUME :: ")
+            logging.info(f"//***// Total POST successfull op {create_results['success']}, total failed op {create_results['failed']} //***//")
+            logging.info(f"//***// Total GET successfull op {update_results['success']}, total failed op {update_results['failed']} //***//")
+
             
 
         if "update" in operations:
@@ -62,27 +78,30 @@ class OP:
                  
             else:
                 # Make the first API call
-                ca_req_result = self.send_req.create(record, base_url, api_key)
+                waiting_line_result = self.send_req.waiting_line(record, base_url, api_key)
 
-
-                print(f' req result -----> {ca_req_result}')
+                print(f"waiting line result : {waiting_line_result}")
                 # sys.exit()
                 
                 # Check if the first request was successful
-                if ca_req_result['success']:
+                if waiting_line_result['success']:
                     total_successfull_op += 1
                     print(f"Successfully processed request for folio: {record.get('folio')}")
                     #insert in the db the posted CA record
                     if sql_enabled :
-                        fac_result = self.api_track._create_op(ca_req_result['success'][0])
+                        fac_result = self.api_track._create_op(waiting_line_result['success'][0])
                         logging.info(f"insertion sql headers success: {fac_result}")
                         # Process partidas (details)
-                        details_result = self.api_track._details_completed(ca_req_result['success'][0])
+                        details_result = self.api_track._details_completed(waiting_line_result['success'][0])
                         print(f"Details processing result: {details_result}")
                         logging.info(f"insertion sql details success: {details_result}")
+
+                        if details_result == 0:
+                            logging.info(f"insertion sql details success: {details_result}")
+                            logging.info(f"When error happened, json : {waiting_line_result['success'][0].get('json_resp')}")
                         
                         # Process recibos (receipts)
-                        receipts_result = self.api_track._receipts_completed(ca_req_result['success'][0])
+                        receipts_result = self.api_track._receipts_completed(waiting_line_result['success'][0])
                         print(f"Receipts processing result: {receipts_result}")
                         logging.info(f"insertion sql receipts success: {receipts_result}")
 
@@ -95,52 +114,94 @@ class OP:
                     print(f"Failed to process first request for folio: {record.get('folio')}")
                     logging.error(f"Failed to process request for folio: {record.get('folio')}")
                     total_failed_op += 1
-                    
-                    if sql_enabled :
-                        self.error.insert(f"Failed process folio: {record.get('folio')}, "+f"{ ca_req_result['failed'][0]['error_msg']}", self.class_name)
 
-                    if ca_req_result['failed']:
-                        for failure in ca_req_result['failed']:
+                    if waiting_line_result.get('failed') and len(waiting_line_result['failed']) > 0:
+                        # Use double quotes for outer string and ensure safe access to json_resp
+                        logging.info(f"Response when error happened :: {waiting_line_result['failed'][0].get('json_resp', 'No JSON response available')}")
+                    
+                    if self.sql_enabled :
+                        if waiting_line_result.get('failed') and len(waiting_line_result['failed']) > 0 and waiting_line_result['failed'][0].get('error_msg'):
+                            self.error.insert(f"Failed process folio: {record.get('folio')}, "+f"{ waiting_line_result['failed'][0]['error_msg']}", self.class_name)
+                        
+                
+                    if waiting_line_result['failed']:
+                        for failure in waiting_line_result['failed']:
                             print(f"Failure reason: {failure.get('error_msg')}")
                     # Skip to next record if first request failed
 
                     #update retry
-                    if sql_enabled :
+                    if self.sql_enabled :
                         self._retry_tracker(record)
 
                     continue
-        logging.info(f"//***// Total create successfull op {total_successfull_op}, total failed op {total_failed_op} //***//")
-        return {total_successfull_op, total_failed_op}
+        # logging.info(f"//***// Total create successfull op {total_successfull_op}, total failed op {total_failed_op} //***//")
+        return {'success' : total_successfull_op, 'failed' : total_failed_op}
             
-            # if first_request_success:
+    def update_pending(self):
+        """TODO: 
+            read values and just update status and ids for each partition, create an update status and id method for ca, pa, and co
+        """
+        total_successfull_op = 0
+        total_failed_op = 0
+        
+        pendings = self.pending_records.get_pending_records()
 
-            #     if self.bypass_ca:
-            #         parent_ref = {
-            #             'parent_id':  111,
-            #             'fecha': record['dbf_record'].get('fecha')
-            #         }
-            #     else:    
-            #         parent_ref = {
-            #             'parent_id':  ca_req_result['success'][0].get('id'),
-            #             'fecha': ca_req_result['success'][0].get('fecha_emision')
-            #         }
-                
-            #     print(f"Ready to process details request for folio: {record.get('folio')}")
-                
-            #     det_req_results = self.send_det.req_post(record['dbf_record'].get('detalles'), parent_ref)
+        print(f'pendings {pendings}')
 
-            #     if det_req_results['failed']:
-            #         #one request failed, so skip to next CA
-            #         continue
+        for record in pendings:
+
+            #DEBUG RETURN, DELETE AFTER TESTING ---------------------------------------------------------
+            # if total_successfull_op > 3 or total_failed_op > 3:
+            #     return {'success' : total_successfull_op, 'failed' : total_failed_op}
+
+            folio = record.get('num_doc')
+            results = self.get_pending.send(record)
+
+            print(f'GET REQUEST  {folio}')
+
+            if results['success']:
+                total_successfull_op += 1
+                print(f"Successfully processed GET request for folio: {folio}")
+
+                if self.sql_enabled :
                 
-            #     # Update the record status to indicate details were processed successfully
-            #     self.api_track._pa_completed(parent_ref['parent_id'])
-            #     self.api_track.update_create_details(det_req_results['records'])
+                    fac_result = self.api_track._head_completed(results['success'][0])
+                    logging.info(f"insertion sql headers success: {fac_result}")
+                   
+                    
+                    # Process partidas (details)
+                    details_result = self.api_track._detail_completed(results['success'][0])
+                    logging.info(f"insertion sql details succes: {details_result}")
+                    
+
+                    if details_result == 0:
+                        logging.info(f"insertion sql details success: {details_result}")
+                        logging.info(f"When error happened, json : {results['success'][0].get('json_resp')}")
+                    
+                    
+                    # Process recibos (receipts)
+                    receipts_result = self.api_track._receipt_completed(results['success'][0])
+                    print(f"Receipts processing result: {receipts_result}")
+                    logging.info(f"insertion sql receipts success: {receipts_result}")
+
+                    self._retry_completed(record)
+            
+            else :
+                print(f"Failed to process GET request for folio: {folio}")
+                logging.error(f"Failed to process GET request for folio: {folio}")
+                total_failed_op += 1
+
+                if results.get('failed') and len(results['failed']) > 0:
+                    # Use double quotes for outer string and ensure safe access to json_resp
+                    logging.info(f"Response when error happened :: {results['failed'][0].get('json_resp', 'No JSON response available')}")
                 
-            #     # Call after request handler
-            #     emp =  record['dbf_record']['detalles'][0].get('emp')
-            #     emp_div =  record['dbf_record']['detalles'][0].get('emp_div')
-            #     self._after_request(parent_ref['parent_id'], emp, emp_div)
+                self._retry_tracker(record)
+
+                continue
+            
+
+        return {'success' : total_successfull_op, 'failed' : total_failed_op}
+    
                 
 
     def _update(self, records):

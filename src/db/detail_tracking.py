@@ -141,8 +141,71 @@ class DetailTracking:
         except Exception as e:
             logging.error(f"Error al obtener detalles por rango de fechas: {e}")
             return []
+
+    def insert_details_on_wait(self, details: List[Dict], action, estado) -> bool:
+        try:
+            with psycopg2.connect(
+                host=self.config['host'],
+                database=self.config['database'],
+                user=self.config['user'],
+                password=self.config['password'],
+                port=self.config['port']
+            ) as conn:
+
+                deleted_count = 0
+                inserted_count = 0
+               
+                for detail in details:
+                    detail_id = detail.get('id')
+                    
+                    try:
+                        with conn.cursor() as cursor:
+
+                            # Upsert query - insert if not exists, update if exists based on folio and indice
+                            upsert_query = """
+                                INSERT INTO detalle_estado (
+                                    id, folio, hash_detalle, fecha, estado, accion, ref, indice
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                ON CONFLICT (folio, indice) DO UPDATE SET
+                                    id = EXCLUDED.id,
+                                    hash_detalle = EXCLUDED.hash_detalle,
+                                    fecha = EXCLUDED.fecha,
+                                    estado = EXCLUDED.estado,
+                                    accion = EXCLUDED.accion,
+                                    ref = EXCLUDED.ref
+                            """
+                            params = (
+                                    detail_id,  # Use the actual ID from the API
+                                    detail.get('folio'),
+                                    detail.get('detail_hash'),
+                                    detail.get('fecha'),
+                                    estado,
+                                    action,
+                                    detail.get('ref'),
+                                    detail.get('indice')
+                                )
+
+                            cursor.execute(upsert_query, params)
+                            inserted_count += 1
+
+                            print(f'detail_tracking :: INSERT REPLACE: ID={detail_id}, FOLIO={detail.get('folio')}, HASH={detail.get('detail_hash')}, '
+                            f'FECHA={detail.get('fecha')}, ESTADO={estado}, ACCION={action}, REF={detail.get('ref')}, INDICE={detail.get('indice')}')
+
+                        # Commit the transaction for this ID
+                        conn.commit()
+                        print(f"Successfully processed ID {detail_id}: deleted {deleted_count}, inserted {inserted_count}")
+
+                    except Exception as e:
+                        logging.error(f"DETAILS :: Error in insert details on wait: {e}")
+                        return False
+
+                return inserted_count > 0
+
+        except Exception as e:
+            logging.error(f"detail_tracking :: Error insert details on wait: {e}")
+            return False
     
-    def batch_replace_by_id(self, details: List[Dict]) -> bool:
+    def batch_replace_by_id(self, details: List[Dict], action, estado) -> bool:
         """
         Procesa múltiples detalles en una sola transacción, utilizando el ID como referencia
         principal en lugar del folio.
@@ -156,6 +219,7 @@ class DetailTracking:
         """
         if not details:
             return True  # Nothing to process
+        
             
         try:
             # Connect with explicit parameters instead of using **
@@ -220,8 +284,7 @@ class DetailTracking:
                                 
                                 # Extract values
                                 detail_hash = detail.get('hash_detail') or detail.get('hash_detalle') or detail.get('detail_hash')
-                                estado = 'dv_completado'
-                                operation = detail.get('accion', 'creado')
+                              
                                 
                                 params = (
                                     detail_id,  # Use the actual ID from the API
@@ -229,13 +292,14 @@ class DetailTracking:
                                     detail_hash,
                                     fecha,
                                     estado,
-                                    operation,
+                                    action,
                                     ref_value
                                 )
                                 
                                 # Debug print
-                                print(f'REPLACE: ID={detail_id}, FOLIO={folio}, HASH={detail_hash}, '
-                                      f'FECHA={fecha}, ESTADO={estado}, ACCION={operation}, REF={ref_value}')
+                                # logging.warning(f'////// /////// //////CHECKING FOR BUG DUPLICATE ID...')
+                                logging.info(f'detail_tracking :: INSERT REPLACE: ID={detail_id}, FOLIO={folio}, HASH={detail_hash}, '
+                                       f'FECHA={fecha}, ESTADO={estado}, ACCION={action}, REF={ref_value}')
                                 
                                 cursor.execute(insert_query, params)
                                 inserted_count += 1
@@ -246,14 +310,15 @@ class DetailTracking:
                         
                     except Exception as e:
                         # If anything goes wrong, rollback this ID's transaction
-                        conn.rollback()
+                        conn.rollback()#TODO:comment this line <------------------------------------------------------------------
                         logging.error(f"Error processing ID {detail_id}: {e}")
+                        inserted_count = 0
                         # Continue with the next ID
                         
                 return inserted_count > 0
                 
         except Exception as e:
-            logging.error(f"Error in batch_replace_by_id: {e}")
+            logging.error(f"DETAILS :: Error in batch_replace_by_id: {e}")
             return False
     
     def batch_insert_details(self, details: List[Dict]) -> bool:
@@ -367,7 +432,8 @@ class DetailTracking:
                             success_count += 1
                         except Exception as e:
                             # Log the error but continue with other records
-                            logging.error(f"Error inserting record {composite_id}: {e}")
+                            success_count = 0
+                            logging.error(f"DETAILS :: Error inserting record {composite_id}: {e}")
                             conn.rollback()
                             continue
                     
@@ -375,7 +441,7 @@ class DetailTracking:
                     return success_count > 0
                     
         except Exception as e:
-            logging.error(f"Error al insertar detalles en lote: {e}")
+            logging.error(f"DETAILS :: Error al insertar detalles en lote: {e}")
             return False
 
 

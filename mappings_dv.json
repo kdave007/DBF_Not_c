@@ -101,6 +101,11 @@
                     "velneo_table": "fpg" ,
                     "type": "string"
             },
+            "FORMAPAG":{
+                    "dbf": "FORMAPAG",
+                    "velneo_table": "fpg_v" ,
+                    "type": "string"
+            },
             "CAMPO1":{
                 "dbf": "CAMPO1",
                 "velneo_table": "ref_recibo" ,

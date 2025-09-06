@@ -51,7 +51,27 @@ class EncEnv:
     
     def get(self, key, default=None):
         """Get a specific environment variable by key with optional default value"""
-        if not self.env_vars:
+        # HARDCODED FLAG: Use original .env file directly for easier testing
+        use_original_env = True
+        
+        # Clear any previously loaded env vars to force reload
+        self.env_vars = {}
+        
+        if use_original_env:
+            # Use dotenv to load from the original .env file
+            from dotenv import dotenv_values
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
+            # print(f"Loading environment from original .env file at: {env_path}")
+            self.env_vars = dotenv_values(env_path)
+            # print(f"Loaded {len(self.env_vars)} environment variables from .env")
+        else:
+            # Use the encrypted version
+            # print("Using encrypted environment file")
             self.env_vars = self.fetch()
         
-        return self.env_vars.get(key, default)
+        # Debug: Print the requested key and value (masking sensitive values)
+        value = self.env_vars.get(key, default)
+        masked_value = "*****" if key.lower() in ["api_key", "password", "secret"] else value
+        # print(f"Env variable {key} = {masked_value}")
+        
+        return value

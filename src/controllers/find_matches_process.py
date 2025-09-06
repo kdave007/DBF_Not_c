@@ -244,6 +244,7 @@ class MatchesProcess:
                         'total_bruto': record.get('total_bruto'),
                         'hor': record.get('hor'),
                         'fpg': record.get('fpg'),
+                        'fpg_v': record.get('fpg_v'),
                         'og_folio': record.get('og_folio'),
                         'md5_hash': record.get('md5_hash')
                     }
