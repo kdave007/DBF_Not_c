@@ -20,11 +20,15 @@ class APIResponseTracking:
     def _create_op(self, item):
         action = item.get('accion')
         estado = item.get('estado')
+        waiting_id = item.get('id')
           
         # Parse the date string from DBF format to a proper date object
         print(f'item to insert {item}')
         
         fecha_str = item.get('fecha_emision')
+        create_index = 0 #since it does not have an assigned index by server yet, set it as 0
+        doc_type = "DV"
+
         try:
             # Remove the 'a. m.' or 'p. m.' part and parse the date
             fecha_str = fecha_str.replace(' a. m.', '').replace(' p. m.', '')
@@ -36,14 +40,16 @@ class APIResponseTracking:
             print(f"Warning: Could not parse date '{fecha_str}', using current date instead")
         
         return self.resp_tracking.insert_fac(
-            item.get('id'),
+            create_index,
             item.get('folio'),
             item.get('total_partidas'),
             item.get('hash'),
             estado,
             action,
             fecha_date,
-            item.get('total_recibos')
+            item.get('total_recibos'),
+            waiting_id,
+            doc_type
         )
    
     def _details_waiting(self, records):
@@ -166,10 +172,11 @@ class APIResponseTracking:
         action = record.get('accion')
         folio = record.get('folio')
         new_id = record.get('id')
+        tipo_doc = 'DV'
         
         print(f"Updating record {id} to status: {estado}, action: {action}")
         
-        return self.resp_tracking.update_head_status(folio, new_id, estado, action)
+        return self.resp_tracking.update_head_status(folio, new_id, estado, action, tipo_doc)
 
     def _detail_completed(self, records):
         """Update record status to indicate that all details have been processed

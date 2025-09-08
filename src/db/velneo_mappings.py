@@ -91,7 +91,7 @@ class VelneoMappings:
                 # Return connection to pool instead of closing
                 self.pool.release_connection(conn)
 
-    def get_from_general_serie(self):
+    def get_from_general_serie(self, store):
         """Get the Velneo ID for a serie from general_misc table
         
         Args:
@@ -113,10 +113,10 @@ class VelneoMappings:
             
             query = """
             SELECT id_velneo FROM general_misc 
-            WHERE title = 'serie'
+            WHERE title = 'serie' AND tienda = %s
             """
             
-            cursor.execute(query)
+            cursor.execute(query, (store,))
             result = cursor.fetchone()
             
             return result[0] if result else None
@@ -131,7 +131,7 @@ class VelneoMappings:
                 # Return connection to pool instead of closing
                 self.pool.release_connection(conn)
 
-    def get_from_general_emp(self):
+    def get_from_general_emp(self, store):
         """Get the Velneo ID for an empresa (company) from general_misc table
         
         Args:
@@ -153,10 +153,10 @@ class VelneoMappings:
             
             query = """
             SELECT id_velneo FROM general_misc 
-            WHERE title = 'empresa'
+            WHERE title = 'empresa' AND tienda = %s
             """
             
-            cursor.execute(query)
+            cursor.execute(query, (store,))
             result = cursor.fetchone()
             
             return result[0] if result else None
@@ -171,7 +171,7 @@ class VelneoMappings:
                 # Return connection to pool instead of closing
                 self.pool.release_connection(conn)
     
-    def get_from_general_div(self):
+    def get_from_general_div(self, store):
         """Get the Velneo ID for an division (company) from general_misc table
         
         Args:
@@ -193,10 +193,10 @@ class VelneoMappings:
             
             query = """
             SELECT id_velneo FROM general_misc 
-            WHERE title = 'division'
+            WHERE title = 'division' AND tienda = %s
             """
             
-            cursor.execute(query)
+            cursor.execute(query, (store,))
             result = cursor.fetchone()
             
             return result[0] if result else None
@@ -421,7 +421,7 @@ class VelneoMappings:
                 # Return connection to pool instead of closing
                 self.pool.release_connection(conn)
 
-    def get_from_general_plaza(self):
+    def get_from_general_plaza(self, store):
         """Get the Velneo ID for an plaza (company) from general_misc table
         
         Args:
@@ -443,10 +443,10 @@ class VelneoMappings:
             
             query = """
             SELECT id_velneo FROM general_misc 
-            WHERE title = 'plaza'
+            WHERE title = 'plaza' AND tienda = %s
             """
             
-            cursor.execute(query)
+            cursor.execute(query, (store,))
             result = cursor.fetchone()
             
             return result[0] if result else None
@@ -563,6 +563,113 @@ class VelneoMappings:
             if conn:
                 # Return connection to pool instead of closing
                 self.pool.release_connection(conn)
+    
+    def get_cja_bco_v(self, reference):
+        conn = None
+        cursor = None
+        try:
+            # Get connection from pool
+            conn = self.pool.get_connection()
+            if not conn:
+                logging.error("Could not get database connection from pool")
+                return None
+                
+            cursor = conn.cursor()
+            
+            query = """
+            SELECT velneo FROM cja_bco_V
+            WHERE pvsi = %s
+            LIMIT 1
+            """
+            
+            cursor.execute(query, (reference,))
+            result = cursor.fetchone()
+            
+            return result[0] if result else None
+        
+        except Exception as e:
+            logging.error(f"Error retrieving caja_banco Velneo ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                # Return connection to pool instead of closing
+                self.pool.release_connection(conn)
+    
+    def get_forma_mpg_v(self, reference):
+        conn = None
+        cursor = None
+        try:
+            # Get connection from pool
+            conn = self.pool.get_connection()
+            if not conn:
+                logging.error("Could not get database connection from pool")
+                return None
+                
+            cursor = conn.cursor()
+           
+            # Single query with a fallback to default_value if no match found
+            query = """
+            SELECT velneo FROM mpg_v 
+            WHERE pvsi = %s
+            LIMIT 1
+            """
+            
+            cursor.execute(query, (reference,))
+            result = cursor.fetchone()
+            
+            return result[0] if result else None
+        
+        except Exception as e:
+            logging.error(f"Error retrieving forma_pago Velneo ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                # Return connection to pool instead of closing
+                self.pool.release_connection(conn)
+    
+    def get_metodo_fpg_V(self, reference):
+        """Get the Velneo ID for a payment method from metodo_pago table
+        
+        Args:
+            reference: The reference to look for in the pvsi column
+            
+        Returns:
+            int: The velneo value if found, None otherwise
+        """
+        conn = None
+        cursor = None
+        try:
+            # Get connection from pool
+            conn = self.pool.get_connection()
+            if not conn:
+                logging.error("Could not get database connection from pool")
+                return None
+                
+            cursor = conn.cursor()
+            
+            query = """
+            SELECT velneo FROM fpg_V 
+            WHERE pvsi = %s
+            LIMIT 1
+            """
+            
+            cursor.execute(query, (reference,))
+            result = cursor.fetchone()
+            
+            return result[0] if result else None
+        except Exception as e:
+            logging.error(f"Error retrieving payment method Velneo ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                # Return connection to pool instead of closing
+                self.pool.release_connection(conn)
 
             
     def get_fac_id(self, reference):
@@ -579,7 +686,7 @@ class VelneoMappings:
             
             query = """
             SELECT id FROM estado_factura_venta 
-            WHERE folio = %s
+            WHERE folio = %s AND tipo_doc = 'FA'
             LIMIT 1
             """
             

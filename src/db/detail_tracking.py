@@ -188,7 +188,7 @@ class DetailTracking:
                             cursor.execute(upsert_query, params)
                             inserted_count += 1
 
-                            print(f'detail_tracking :: INSERT REPLACE: ID={detail_id}, FOLIO={detail.get('folio')}, HASH={detail.get('detail_hash')}, '
+                            print(f'detail_tracking :: insert_details_on_wait: ID={detail_id}, FOLIO={detail.get('folio')}, HASH={detail.get('detail_hash')}, '
                             f'FECHA={detail.get('fecha')}, ESTADO={estado}, ACCION={action}, REF={detail.get('ref')}, INDICE={detail.get('indice')}')
 
                         # Commit the transaction for this ID

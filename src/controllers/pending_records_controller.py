@@ -59,7 +59,7 @@ class PendingRecordsController:
             # Get the store from the folio (assuming folio format contains store info)
             formatted_record = {}
             formatted_record['num_doc'] = record.get('folio')
-            formatted_record['id'] = int(record.get('id'))
+            formatted_record['id'] = int(record.get('id_cola'))
 
             #mainly used for debug simulated response mode
             formatted_record['total_partidas'] = int(record.get('total_partidas', 0))

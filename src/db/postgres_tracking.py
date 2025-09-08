@@ -122,7 +122,7 @@ class PostgresTracking:
             logging.error(f"Error actualizando estado: {e}")
             return False
 
-    def get_records_by_date_range(self, start_date: datetime, end_date: datetime) -> List[Dict]:
+    def get_records_by_date_range(self, start_date: datetime, end_date: datetime, tipo_doc) -> List[Dict]:
         """
         Obtiene todos los registros en el rango de fechas
         
@@ -147,7 +147,7 @@ class PostgresTracking:
                         SELECT id, folio, total_partidas,
                                hash, fecha_procesamiento,estado, fecha_emision
                         FROM estado_factura_venta
-                        WHERE fecha_emision BETWEEN %s AND %s
+                        WHERE fecha_emision BETWEEN %s AND %s AND tipo_doc = %s
                         ORDER BY fecha_emision
                     """
                     
@@ -159,7 +159,7 @@ class PostgresTracking:
                     start_date_param = start_date.date() if hasattr(start_date, 'date') else start_date
                     end_date_param = end_date.date() if hasattr(end_date, 'date') else end_date
                     
-                    cursor.execute(query, (start_date_param, end_date_param))
+                    cursor.execute(query, (start_date_param, end_date_param, tipo_doc))
                     
                     if cursor.description:
                         columns = [desc[0] for desc in cursor.description]

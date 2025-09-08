@@ -34,7 +34,7 @@ class ResponseSimulator:
                 "folio": int(folio) if folio.isdigit() else folio
             },
             "MENSAJE": "",
-            "STATUS": "OK",
+            "ST": "OK",
             "PA": [],
             "CO": {
                 "CTA_COR_T": [],

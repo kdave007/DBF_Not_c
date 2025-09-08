@@ -38,7 +38,7 @@ class OP:
             create_results = self._create(operations['create'])
             logging.info(f"request to upload data finished")
             #wait here till the server process the documents...
-            sys.exit()
+            # sys.exit()
             time.sleep(2)
             logging.info(f"START ::  GET request for documents uploaded to the server...")
             update_results = self.update_pending()
@@ -92,7 +92,7 @@ class OP:
                         fac_result = self.api_track._create_op(waiting_line_result['success'][0])
                         logging.info(f"insertion sql headers success: {fac_result}")
                         # Process partidas (details)
-                        details_result = self.api_track._details_completed(waiting_line_result['success'][0])
+                        details_result = self.api_track._details_waiting(waiting_line_result['success'][0])
                         print(f"Details processing result: {details_result}")
                         logging.info(f"insertion sql details success: {details_result}")
 
@@ -101,7 +101,7 @@ class OP:
                             logging.info(f"When error happened, json : {waiting_line_result['success'][0].get('json_resp')}")
                         
                         # Process recibos (receipts)
-                        receipts_result = self.api_track._receipts_completed(waiting_line_result['success'][0])
+                        receipts_result = self.api_track._receipts_waiting(waiting_line_result['success'][0])
                         print(f"Receipts processing result: {receipts_result}")
                         logging.info(f"insertion sql receipts success: {receipts_result}")
 
@@ -144,7 +144,7 @@ class OP:
         total_successfull_op = 0
         total_failed_op = 0
         
-        pendings = self.pending_records.get_pending_records()
+        pendings = self.pending_records.get_pending_records('DV')
 
         print(f'pendings {pendings}')
 

@@ -288,8 +288,59 @@ class DataMap:
             logging.error(f"Error mapping forma map_fac_id with ref {ref}: {e}")
             return None
     
+    def apply_map_forma_mpg_v(self, ref: str) -> Optional[int]:
+        """Get the Velneo ID for forma_pago_caja_banco from the database
+        
+        Args:
+            ref: The reference code from the DBF record
+            
+        Returns:
+            int: The mapped Velneo ID or None if not found
+        """
+        if not ref:
+            return None
+            
+        try:
+            return self.velneo_mappings.get_forma_mpg_v(ref)
+        except Exception as e:
+            logging.error(f"Error mapping forma pago x caja banco with ref {ref}: {e}")
+            return None
     
+    def apply_map_cja_bco_v(self, ref: str) -> Optional[int]:
+        """Get the Velneo ID for caja_banco from the database
+        
+        Args:
+            ref: The reference code from the DBF record
+            
+        Returns:
+            int: The mapped Velneo ID or None if not found
+        """
+        if not ref:
+            return None
+            
+        try:
+            return self.velneo_mappings.get_cja_bco_v(ref)
+        except Exception as e:
+            logging.error(f"Error mapping caja banco with ref {ref}: {e}")
+            return None
     
+    def apply_map_metodo_fpg_v(self, ref: str) -> Optional[int]:
+        """Get the Velneo ID for metodo_pago from the database
+        
+        Args:
+            ref: The reference code from the DBF record
+            
+        Returns:
+            int: The mapped Velneo ID or None if not found
+        """
+        if not ref:
+            return None
+            
+        try:
+            return self.velneo_mappings.get_metodo_fpg_V(ref)
+        except Exception as e:
+            logging.error(f"Error mapping metodo_pago with ref {ref}: {e}")
+            return None
     
     def process_record_fac(self, record: Dict[str, Any], store, plaza) -> Dict[str, Any]:
         """Process a complete record by applying all relevant mappings
@@ -308,7 +359,9 @@ class DataMap:
             
         result['clt'] = self.apply_map_cliente()
             
-        result['fpg'] = self.apply_map_metodo_pago(record['fpg'])
+        # result['fpg'] = self.apply_map_metodo_pago(record['fpg'])
+            
+        result['fpg'] = self.apply_map_metodo_fpg_v(record['fpg_v'])
             
         result['cmr'] = self.apply_map_vendedor(1)
             
@@ -376,11 +429,15 @@ class DataMap:
         
         # Apply mappings based on available fields in the record
         
-        result['caja_bco'] = self.apply_map_caja_banco(record['caja_bco'])
+        # result['caja_bco'] = self.apply_map_caja_banco(record['caja_bco'])
+
+        result['caja_bco'] = self.apply_map_cja_bco_v(record['caja_bco'])
 
         result['plaza'] = plaza
 
-        result['fpg'] = self.apply_map_forma_pago_caja_banco(record['caja_bco'])
+        # result['fpg'] = self.apply_map_forma_pago_caja_banco(record['caja_bco'])
+
+        result['fpg'] = self.apply_map_forma_mpg_v(record['caja_bco'])
 
         # result['fpg'] = self.apply_map_caja_banco(record['']) #TODO update this value
    

@@ -44,14 +44,16 @@ class ResponseTracking:
             return False
 
     def insert_fac(self, 
-                        id : str,
+                        id ,
                         folio: str, 
                         total_partidas: int,
                         hash: str,
                         estado: str,
                         accion: str,
                         fecha_emision: date,
-                        total_recibos : int
+                        total_recibos : int,
+                        id_cola : int,
+                        tipo_doc : str,
                         ) -> bool:
         """Actualiza o inserta estado de factura"""
         try:
@@ -84,8 +86,8 @@ class ResponseTracking:
                     query = sql.SQL("""
                         INSERT INTO estado_factura_venta (
                             id,folio, total_partidas, hash,
-                            fecha_procesamiento, estado, fecha_emision, accion, total_recibos
-                        ) VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s)
+                            fecha_procesamiento, estado, fecha_emision, accion, total_recibos, id_cola, tipo_doc
+                        ) VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         RETURNING id
                     """)
                     
@@ -99,7 +101,9 @@ class ResponseTracking:
                         estado, 
                         fecha_emision, 
                         accion,
-                        total_recibos
+                        total_recibos,
+                        id_cola,
+                        tipo_doc
                     )
                     #print(f"\nSQL Operation for folio: {folio}")
                     #print(f"Parameters: {params}")
@@ -121,7 +125,7 @@ class ResponseTracking:
             logging.error(f"Error insertando estado: {e}")
             return False
             
-    def update_head_status(self, folio, new_id: int, estado: str, accion: str) -> bool:
+    def update_head_status(self, folio, new_id: int, estado: str, accion: str, tipo_doc: str) -> bool:
         """Update only the estado and accion fields for a record by its ID
         
         Args:
@@ -148,13 +152,13 @@ class ResponseTracking:
                         SET estado = %s, 
                             accion = %s,
                             id = %s
-                        WHERE folio = %s
+                        WHERE folio = %s AND tipo_doc = %s
                         RETURNING id
                     """)
                     
                     # Execute the query with current timestamp
                     current_date = datetime.now()
-                    cursor.execute(query, (estado, accion, new_id, folio))
+                    cursor.execute(query, (estado, accion, new_id, folio, tipo_doc))
                     updated_id = cursor.fetchone()
                     conn.commit()
                     
@@ -198,6 +202,8 @@ class ResponseTracking:
                 with conn.cursor() as cursor:
                     # Process each detail record
                     for record in details:
+
+                        print(f' //////////      insert this record {record}')
                         estado = record.get('estado')
                         folio = record.get('folio')
                         new_id = record.get('id')

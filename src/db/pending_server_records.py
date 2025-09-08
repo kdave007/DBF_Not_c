@@ -9,7 +9,7 @@ class PendingServerRecords:
     def __init__(self, db_config: dict):
         self.config = db_config
     
-    def get_pending_records(self, limit=100):
+    def get_pending_records(self, tipo_doc, limit=100):
         """
         Get records with 'pendiente' status from estado_factura_venta table
         
@@ -31,16 +31,16 @@ class PendingServerRecords:
                 
                 # Correct SQL query with FROM clause and proper WHERE syntax
                 query = """
-                    SELECT id, folio, fecha_emision, hash, fecha_procesamiento , total_partidas, total_recibos
+                    SELECT id, folio, fecha_emision, hash, fecha_procesamiento , total_partidas, total_recibos, id_cola
                     FROM estado_factura_venta
-                    WHERE estado = 'pendiente' AND accion = 'enviado'
+                    WHERE estado = 'pendiente' AND accion = 'enviado' AND tipo_doc = %s
                     ORDER BY fecha_procesamiento DESC
                     LIMIT %s
                 """
                 
                 with conn.cursor() as cursor:
                     # Execute the query with the limit parameter
-                    cursor.execute(query, (limit,))
+                    cursor.execute(query, (tipo_doc, limit))
                     
                     # Fetch all results
                     rows = cursor.fetchall()
@@ -55,7 +55,8 @@ class PendingServerRecords:
                             'hash': row[3],
                             'fecha_procesamiento': row[4],
                             'total_partidas': row[5],
-                            'total_recibos': row[6]
+                            'total_recibos': row[6],
+                            'id_cola' : row[7]
                         })
                     
                     if not result:
