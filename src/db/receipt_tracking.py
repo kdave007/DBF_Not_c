@@ -25,9 +25,8 @@ class ReceiptTracking:
                 # Simple insert query
                 insert_query = """
                     INSERT INTO recibo_venta (
-                        folio, num_ref, dtl_cob_apl_t, dtl_doc_cob_t, cta_cor_t, rbo_cob_t, 
-                        hash, estado, fecha_emision, fecha_procesamiento, indice
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP,  %s)
+                        folio, num_ref, hash, estado, fecha_emision, fecha_procesamiento, indice
+                    ) VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
                 """
                 print(f'RECEIPTS TO PROCESS: {receipts}')
 
@@ -38,12 +37,6 @@ class ReceiptTracking:
                         num_ref = receipt.get('num_ref', '')
                         folio = receipt.get('folio', '')
                         indice = receipt.get('indice')
-                        
-                        # Get ID fields directly from the receipt
-                        dtl_cob_apl_t = receipt.get('id_dtl_cob_apl_t')
-                        dtl_doc_cob_t = receipt.get('id_dtl_doc_cob_t')
-                        cta_cor_t = receipt.get('id_cta_cor_t')
-                        rbo_cob_t = receipt.get('id_rbo_cob_t')
                         
                         # Get fecha_emision (default to today)
                         fecha_emision = receipt.get('fecha_emision', date.today())
@@ -67,8 +60,7 @@ class ReceiptTracking:
                         try:
                             # Insert the record
                             cursor.execute(insert_query, (
-                                folio, num_ref, dtl_cob_apl_t, dtl_doc_cob_t, cta_cor_t, rbo_cob_t,
-                                hash_value, estado, fecha_emision, indice
+                                folio, num_ref, hash_value, estado, fecha_emision, indice
                             ))
                             inserted_count += 1
                             
@@ -77,7 +69,7 @@ class ReceiptTracking:
                             logging.error(f" RECEIPTS :: Error inserting record: {e}")
                             # Continue with next record
 
-                        logging.info(f"Inserting record: folio={folio}, num_ref={num_ref}, dtl_cob_apl_t={dtl_cob_apl_t}")
+                        logging.info(f"Inserting record: folio={folio}, num_ref={num_ref}")
 
 
                 # Commit all changes
@@ -109,9 +101,8 @@ class ReceiptTracking:
                 # Simple insert query
                 insert_query = """
                     INSERT INTO recibo_venta (
-                        folio, num_ref, dtl_cob_apl_t, dtl_doc_cob_t, cta_cor_t, rbo_cob_t, 
-                        hash, estado, fecha_emision, fecha_procesamiento
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        folio, num_ref, hash, estado, fecha_emision, fecha_procesamiento
+                    ) VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                 """
                 print(f'RECEIPTS TO PROCESS: {receipts}')
                 
@@ -122,11 +113,7 @@ class ReceiptTracking:
                         num_ref = receipt.get('num_ref', '')
                         folio = receipt.get('folio', '')
                         
-                        # Get ID fields directly from the receipt
-                        dtl_cob_apl_t = receipt.get('id_dtl_cob_apl_t')
-                        dtl_doc_cob_t = receipt.get('id_dtl_doc_cob_t')
-                        cta_cor_t = receipt.get('id_cta_cor_t')
-                        rbo_cob_t = receipt.get('id_rbo_cob_t')
+                        # ID fields removed as they are no longer needed
                         
                         # Get fecha_emision (default to today)
                         fecha_emision = receipt.get('fecha_emision', date.today())
@@ -148,13 +135,12 @@ class ReceiptTracking:
                         hash_value = receipt.get('hash', '')
                        
 
-                        logging.info(f"Inserting record: folio={folio}, num_ref={num_ref}, dtl_cob_apl_t={dtl_cob_apl_t}")
+                        logging.info(f"Inserting record: folio={folio}, num_ref={num_ref}")
                         
                         try:
                             # Insert the record
                             cursor.execute(insert_query, (
-                                folio, num_ref, dtl_cob_apl_t, dtl_doc_cob_t, cta_cor_t, rbo_cob_t,
-                                hash_value, estado, fecha_emision
+                                folio, num_ref, hash_value, estado, fecha_emision
                             ))
                             inserted_count += 1
                             

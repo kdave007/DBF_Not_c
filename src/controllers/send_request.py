@@ -19,6 +19,7 @@ load_dotenv()
 # Set debug flag from .env - set to True to use simulated responses instead of real API calls
 env = EncEnv()
 DEBUG_MODE = env.get('DEBUG_MODE', 'True').lower() == 'true'
+CLIENT_ID = env.get('CLIENT_ID')
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -95,8 +96,8 @@ class SendRequest:
                     "emp": str(dbf_record.get('emp')),
                     "emp_div": str(dbf_record.get('emp_div')),
                     "num_doc": folio,
-                    "clt": dbf_record.get('clt'),
-                    # "clt":2,
+                    # "clt": dbf_record.get('clt'),
+                    "clt": int(CLIENT_ID),
                     "fpg": dbf_record.get('fpg'),
                     # "fpg": 20,
                     "cmr": dbf_record.get('cmr'),

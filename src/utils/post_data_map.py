@@ -24,14 +24,14 @@ class DataMap:
         self.db_config = db_config or PostgresConnection.get_db_config()
         self.velneo_mappings = VelneoMappings(self.db_config)
     
-    def apply_map_serie(self) -> Optional[int]:
+    def apply_map_serie(self, store) -> Optional[int]:
         """Get the Velneo ID for serie from the database
         
         Returns:
             int: The mapped Velneo ID or None if not found
         """
         try:
-            return self.velneo_mappings.get_from_general_serie()
+            return self.velneo_mappings.get_from_general_serie(store)
         except Exception as e:
             logging.error(f"Error mapping serie: {e}")
             return None
@@ -114,7 +114,7 @@ class DataMap:
             logging.error(f"Error mapping almacen: {e}")
             return None
 
-    def apply_map_emp(self) -> Optional[int]:
+    def apply_map_emp(self, store) -> Optional[int]:
         """Get the Velneo ID for empresa from the database
         
         Args:
@@ -125,12 +125,12 @@ class DataMap:
         """
         try:
             # Note: ref parameter is kept for consistency but not used in the current implementation
-            return self.velneo_mappings.get_from_general_emp()
+            return self.velneo_mappings.get_from_general_emp(store)
         except Exception as e:
             logging.error(f"Error mapping empresa: {e}")
             return None
 
-    def apply_map_div(self) -> Optional[int]:
+    def apply_map_div(self, store) -> Optional[int]:
         """Get the Velneo ID for division from the database
         
         Args:
@@ -141,7 +141,7 @@ class DataMap:
         """
         try:
             # Note: ref parameter is kept for consistency but not used in the current implementation
-            return self.velneo_mappings.get_from_general_div()
+            return self.velneo_mappings.get_from_general_div(store)
         except Exception as e:
             logging.error(f"Error mapping division: {e}")
             return None
@@ -355,21 +355,21 @@ class DataMap:
         # print(f' MAP FAC BEFORE {record}')
         # Apply mappings based on available fields in the record
 
-        result['ser'] = self.apply_map_serie()
+        result['ser'] = self.apply_map_serie(store)
             
         result['clt'] = self.apply_map_cliente()
             
         # result['fpg'] = self.apply_map_metodo_pago(record['fpg'])
             
-        result['fpg'] = self.apply_map_metodo_fpg_v(record['fpg_v'])
+        result['fpg'] = self.apply_map_metodo_fpg_v(record['fpg'])
             
         result['cmr'] = self.apply_map_vendedor(1)
             
         result['pai'] = self.apply_map_pais('México')
 
-        result['emp_div'] = self.apply_map_div()
+        result['emp_div'] = self.apply_map_div(store)
 
-        result['emp'] = self.apply_map_emp()
+        result['emp'] = self.apply_map_emp(store)
 
         result['alm'] = self.apply_map_alm(store, plaza)
 
@@ -394,14 +394,14 @@ class DataMap:
         # Apply mappings based on available fields in the record
         result['alm'] = self.apply_map_alm(store, plaza)
 
-        result['emp_div'] = self.apply_map_div()
+        result['emp_div'] = self.apply_map_div(store)
 
-        result['emp'] = self.apply_map_emp()
+        result['emp'] = self.apply_map_emp(store)
 
         result['art'] = self.apply_map_articulo(record['REF'])
      
             
-        result['ser_vta'] = self.apply_map_serie()
+        result['ser_vta'] = self.apply_map_serie(store)
      
         #result['mov_tip'] = self.apply_map_tipo_mov(record['tipo_mov'])
         result['mov_tip'] = 'V'
